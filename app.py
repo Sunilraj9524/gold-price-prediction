@@ -27,7 +27,7 @@ except Exception as e:
     st.stop()
 
 # 3. SIDEBAR CONTROLS
-st.sidebar.header("MLOps Configuration")
+st.sidebar.header("adjust the bar")
 days_lookback = st.sidebar.slider("Lookback Period (Days)", min_value=30, max_value=90, value=60)
 
 if st.sidebar.button("Run Prediction Pipeline"):
