@@ -8,11 +8,9 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import time
 
-# 1. SETUP PAGE
 st.set_page_config(page_title="sunils Gold Price prediction", layout="wide")
 st.title("🏆Gold price predicton")
 
-# 2. LOAD SAVED ASSETS
 @st.cache_resource
 def load_assets():
     model = load_model('gold_price_prediction_model_2.keras')
@@ -26,51 +24,48 @@ except Exception as e:
     st.error(f"Error loading files: {e}")
     st.stop()
 
-# 3. SIDEBAR CONTROLS
 st.sidebar.header("Adjust the bar for technincal analysis")
 days_lookback = st.sidebar.slider("Lookback Period (Days)", min_value=30, max_value=90, value=60)
 
 if st.sidebar.button("Run Prediction Pipeline"):
     
-    # Start Timer for Latency Calculation
     start_time = time.time()
     
-    # 4. DATA INGESTION (Live)
     with st.spinner("Fetching live market data..."):
         df = yf.download('GC=F', period='6mo', interval='1d')
         
-        # Flatten MultiIndex columns if present (Fix for TypeError)
+       
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
             
         model_data = df['Close'].values.reshape(-1, 1)
         
-    # 5. PREPROCESSING
+   
     last_60_days = model_data[-days_lookback:]
     last_60_days_scaled = scaler.transform(last_60_days)
     X_input = last_60_days_scaled.reshape(1, days_lookback, 1)
     
-    # 6. INFERENCE
+    
     predicted_scaled = model.predict(X_input)
     
-    # Calibration Offset (Adjust if needed)
+    
     calibration_value = 0 
     predicted_price = scaler.inverse_transform(predicted_scaled)[0][0] + calibration_value
     
-    # Stop Timer
+    
     end_time = time.time()
     latency = end_time - start_time
     
-    # Get Dates and Last Price
+    
     last_date = df.index[-1]
     next_date = last_date + pd.Timedelta(days=1)
     last_actual_price = model_data[-1][0]
     diff = predicted_price - last_actual_price
     
-    # Current System Time
+    
     current_time = datetime.now().strftime("%d-%b-%Y %H:%M:%S")
 
-    # 7. DISPLAY METRICS
+    
     st.markdown(f"### 🕒 Last Updated: {current_time}")
     st.markdown("---")
     
@@ -92,7 +87,7 @@ if st.sidebar.button("Run Prediction Pipeline"):
         else:
             st.error("📉 Trend: Bearish (Down)")
 
-    # 8. DATA TABLE (Last 10 Days - FULL DATA)
+    
     st.markdown("---")
     st.subheader("Recent Market Data (Last 10 Days)")
     
@@ -111,7 +106,7 @@ if st.sidebar.button("Run Prediction Pipeline"):
     except Exception as e:
         st.error(f"Could not display data table: {e}")
 
-    # 9. GRAPH
+    
     st.subheader("Market Trend (Last 6 Months)")
     fig, ax = plt.subplots(figsize=(10, 4))
     ax.plot(df.index, df['Close'], label="Actual Price", color='blue')
@@ -120,7 +115,6 @@ if st.sidebar.button("Run Prediction Pipeline"):
     ax.legend()
     st.pyplot(fig)
     
-    # MLOps Sidebar Info
     st.sidebar.success(f"✅ Pipeline Executed in {latency:.2f}s")
     st.sidebar.info(f"📅 Data Freshness: {last_date.date()}")
 
