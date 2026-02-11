@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import time
 
-st.set_page_config(page_title="sunils Gold Price prediction", layout="wide")
+st.set_page_config(page_title="Sunil's Gold Price prediction", layout="wide")
 st.title("🏆Gold price predicton")
 
 @st.cache_resource
