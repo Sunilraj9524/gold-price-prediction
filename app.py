@@ -9,8 +9,8 @@ from datetime import datetime
 import time
 
 # 1. SETUP PAGE
-st.set_page_config(page_title="Gold Price prediction", layout="wide")
-st.title("🏆 technical analysis for gold price predicton")
+st.set_page_config(page_title="sunils Gold Price prediction", layout="wide")
+st.title("🏆Gold price predicton")
 
 # 2. LOAD SAVED ASSETS
 @st.cache_resource
@@ -27,7 +27,7 @@ except Exception as e:
     st.stop()
 
 # 3. SIDEBAR CONTROLS
-st.sidebar.header("adjust the bar")
+st.sidebar.header("Adjust the bar for technincal analysis")
 days_lookback = st.sidebar.slider("Lookback Period (Days)", min_value=30, max_value=90, value=60)
 
 if st.sidebar.button("Run Prediction Pipeline"):
