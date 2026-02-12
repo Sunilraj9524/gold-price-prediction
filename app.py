@@ -9,8 +9,8 @@ from datetime import datetime
 import time
 
 # 1. SETUP PAGE
-st.set_page_config(page_title="Gold Price MLOps", layout="wide")
-st.title("🏆 Gold Price Prediction: MLOps Pipeline")
+st.set_page_config(page_title="Sunil's Gold Price", layout="wide")
+st.title("🏆 Gold Price Prediction")
 
 # 2. LOAD SAVED ASSETS
 @st.cache_resource
