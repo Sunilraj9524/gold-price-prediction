@@ -40,7 +40,7 @@ st.sidebar.header("Continuous Learning")
 st.sidebar.info(f"Current Brain: {st.session_state.model_version}")
 
 if st.sidebar.button("⚡ Retrain on Latest Data"):
-    with st.spinner("Fetching new data and fine-tuning model..."):
+    with st.spinner("Fine-tuning model weights carefully..."):
         # 1. Get Fresh Data (Last 6 months)
         new_df = yf.download('GC=F', period='6mo', interval='1d')
         if isinstance(new_df.columns, pd.MultiIndex):
@@ -51,7 +51,6 @@ if st.sidebar.button("⚡ Retrain on Latest Data"):
         scaled_data = st.session_state.scaler.transform(new_data)
         
         X_new, y_new = [], []
-        # Create sequences (just like in Jupyter)
         for i in range(60, len(scaled_data)):
             X_new.append(scaled_data[i-60:i, 0])
             y_new.append(scaled_data[i, 0])
@@ -59,13 +58,19 @@ if st.sidebar.button("⚡ Retrain on Latest Data"):
         X_new, y_new = np.array(X_new), np.array(y_new)
         X_new = np.reshape(X_new, (X_new.shape[0], X_new.shape[1], 1))
         
-        # 3. FINE-TUNE (Train for 5 epochs on new data)
-        # This updates the weights of the loaded model
-        st.session_state.model.fit(X_new, y_new, epochs=5, batch_size=32, verbose=0)
+        # 3. STABLE FINE-TUNING (The Fix)
+        from tensorflow.keras.optimizers import Adam
+        
+        # We re-compile the model with a TINY learning rate (0.0001) 
+        # so it doesn't forget its original training.
+        st.session_state.model.compile(optimizer=Adam(learning_rate=0.0001), loss='mean_squared_error')
+        
+        # We only train for 1 epoch instead of 5, just to "nudge" it
+        st.session_state.model.fit(X_new, y_new, epochs=1, batch_size=16, verbose=0)
         
         # 4. Update Status
-        st.session_state.model_version = f"Updated at {datetime.now().strftime('%H:%M:%S')}"
-        st.sidebar.success("✅ Model Retrained Successfully!")
+        st.session_state.model_version = f"Fine-Tuned at {datetime.now().strftime('%H:%M:%S')}"
+        st.sidebar.success("✅ Model Fine-Tuned Safely!")
         time.sleep(1) # Let user see the message
 
 # ----------------------------------------
