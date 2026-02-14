@@ -12,8 +12,8 @@ import random
 import tensorflow as tf
 
 # 1. SETUP PAGE
-st.set_page_config(page_title="Gold Price MLOps", layout="wide")
-st.title("🏆 Gold Price Prediction: MLOps Pipeline")
+st.set_page_config(page_title="Sunil raj's Gold Price MLOps", layout="wide")
+st.title("🏆 Technical analysis for prediction Gold price")
 
 # 2. LOAD SAVED ASSETS
 @st.cache_resource
@@ -31,7 +31,6 @@ except Exception as e:
     st.stop()
 
 # 3. SIDEBAR CONTROLS
-st.sidebar.header("MLOps Configuration")
 days_lookback = st.sidebar.slider("Lookback Period (Days)", min_value=30, max_value=90, value=60)
 
 # --- CONTINUOUS LEARNING ---
