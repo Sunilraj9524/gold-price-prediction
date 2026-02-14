@@ -7,10 +7,13 @@ import joblib
 import plotly.graph_objects as go
 from datetime import datetime
 import time
+import os
+import random
+import tensorflow as tf
 
 # 1. SETUP PAGE
-st.set_page_config(page_title="Sunil raj's Gold Price MLOps", layout="wide")
-st.title("🏆 Gold Price technical analysis for prediction")
+st.set_page_config(page_title="Gold Price MLOps", layout="wide")
+st.title("🏆 Gold Price Prediction: MLOps Pipeline")
 
 # 2. LOAD SAVED ASSETS
 @st.cache_resource
@@ -28,6 +31,7 @@ except Exception as e:
     st.stop()
 
 # 3. SIDEBAR CONTROLS
+st.sidebar.header("MLOps Configuration")
 days_lookback = st.sidebar.slider("Lookback Period (Days)", min_value=30, max_value=90, value=60)
 
 # --- CONTINUOUS LEARNING ---
@@ -54,12 +58,19 @@ if st.sidebar.button("⚡ Retrain on Latest Data"):
         
         st.session_state.model = load_model('gold_price_prediction_model_2.keras')
         
+        # --- NEW: LOCK THE RANDOM SEED FOR 100% REPRODUCIBILITY ---
+        os.environ['PYTHONHASHSEED'] = '0'
+        np.random.seed(42)
+        random.seed(42)
+        tf.random.set_seed(42)
+        # ----------------------------------------------------------
+        
         from tensorflow.keras.optimizers import Adam
         st.session_state.model.compile(optimizer=Adam(learning_rate=0.0001), loss='mean_squared_error')
         st.session_state.model.fit(X_new, y_new, epochs=1, batch_size=16, verbose=0)
         
         st.session_state.model_version = f"Fine-Tuned at {datetime.now().strftime('%H:%M:%S')}"
-        st.sidebar.success("✅ Model Fine-Tuned and Stabilized!")
+        st.sidebar.success("✅ Model Fine-Tuned (Deterministic Mode)!")
         time.sleep(1)
 
 # ----------------------------------------
@@ -141,16 +152,14 @@ if st.sidebar.button("Run Prediction Pipeline"):
         
     st.caption(f"🤖 Prediction generated using: **{st.session_state.model_version}**")
 
-    # 8. INTERACTIVE CANDLESTICK GRAPH (PLOTLY)
+    # 8. INTERACTIVE CANDLESTICK GRAPH
     st.markdown("---")
     st.subheader("Market Trend & 30-Day Projection (Candlestick)")
     
     future_dates = [last_date + pd.Timedelta(days=i) for i in range(1, 31)]
     
-    # Create the Plotly figure
     fig = go.Figure()
 
-    # Add Historical Candlesticks
     fig.add_trace(go.Candlestick(
         x=df.index,
         open=df['Open'].values.flatten(),
@@ -160,7 +169,6 @@ if st.sidebar.button("Run Prediction Pipeline"):
         name='Historical Data'
     ))
 
-    # Add Future 30-Day Prediction Line
     fig.add_trace(go.Scatter(
         x=future_dates,
         y=future_predictions.flatten(),
@@ -170,17 +178,15 @@ if st.sidebar.button("Run Prediction Pipeline"):
         marker=dict(size=4, color='cyan')
     ))
 
-    # Format the layout
     fig.update_layout(
-        xaxis_rangeslider_visible=False, # Hides the messy slider at the bottom
+        xaxis_rangeslider_visible=False,
         yaxis_title='Gold Price ($/oz)',
         xaxis_title='Date',
-        template='plotly_dark', # Looks amazing in Streamlit's dark mode
+        template='plotly_dark',
         margin=dict(l=0, r=0, t=30, b=0),
         height=500
     )
     
-    # Display interactive chart
     st.plotly_chart(fig, use_container_width=True)
 
     # 9. DATA TABLE
