@@ -12,8 +12,8 @@ import random
 import tensorflow as tf
 
 # 1. SETUP PAGE
-st.set_page_config(page_title="Sunil raj's Gold Price MLOps", layout="wide")
-st.title("🏆 Technical analysis for prediction Gold price")
+st.set_page_config(page_title="Sunilraj's Gold Price MLOps", layout="wide")
+st.title("🏆Technical analysis for prediction Gold price")
 
 # 2. LOAD SAVED ASSETS
 @st.cache_resource
@@ -31,6 +31,7 @@ except Exception as e:
     st.stop()
 
 # 3. SIDEBAR CONTROLS
+st.sidebar.header("MLOps Configuration")
 days_lookback = st.sidebar.slider("Lookback Period (Days)", min_value=30, max_value=90, value=60)
 
 # --- CONTINUOUS LEARNING ---
@@ -57,12 +58,10 @@ if st.sidebar.button("⚡ Retrain on Latest Data"):
         
         st.session_state.model = load_model('gold_price_prediction_model_2.keras')
         
-        # --- NEW: LOCK THE RANDOM SEED FOR 100% REPRODUCIBILITY ---
         os.environ['PYTHONHASHSEED'] = '0'
         np.random.seed(42)
         random.seed(42)
         tf.random.set_seed(42)
-        # ----------------------------------------------------------
         
         from tensorflow.keras.optimizers import Adam
         st.session_state.model.compile(optimizer=Adam(learning_rate=0.0001), loss='mean_squared_error')
@@ -90,12 +89,12 @@ if st.sidebar.button("Run Prediction Pipeline"):
     last_60_days_scaled = st.session_state.scaler.transform(last_60_days)
     X_input = last_60_days_scaled.reshape(1, days_lookback, 1)
     
-    # 6. RECURSIVE INFERENCE (30 DAYS)
+    # 6. RECURSIVE INFERENCE (CAPPED TO 7 DAYS FOR SAFETY)
     future_predictions_scaled = []
     current_input = X_input.copy()
 
-    with st.spinner("Calculating 30-day future trajectory..."):
-        for _ in range(30):
+    with st.spinner("Calculating safe 7-day future trajectory..."):
+        for _ in range(7): # Only 7 loops now! No $1000 explosions.
             pred = st.session_state.model.predict(current_input, verbose=0)
             future_predictions_scaled.append(pred[0, 0])
             new_step = np.array([[[pred[0, 0]]]])
@@ -104,8 +103,8 @@ if st.sidebar.button("Run Prediction Pipeline"):
     future_predictions = st.session_state.scaler.inverse_transform(np.array(future_predictions_scaled).reshape(-1, 1))
     
     pred_tomorrow = future_predictions[0][0]
+    pred_day3 = future_predictions[2][0]
     pred_week = future_predictions[6][0]
-    pred_month = future_predictions[29][0]
     
     end_time = time.time()
     latency = end_time - start_time
@@ -137,25 +136,25 @@ if st.sidebar.button("Run Prediction Pipeline"):
         else:
             st.error("📉 Market is Bearish")
 
-    st.markdown("### 🔮 Future Trajectory Forecast")
+    st.markdown("### 🔮 7-Day Safe Trajectory Forecast")
     f_col1, f_col2, f_col3 = st.columns(3)
     with f_col1:
         st.info("Tomorrow (Day 1)")
         st.metric(label="T+1 Forecast", value=f"${pred_tomorrow:.2f}/oz", delta=f"${diff_tomorrow:.2f} vs Today")
     with f_col2:
-        st.warning("Next Week (Day 7)")
-        st.metric(label="T+7 Forecast", value=f"${pred_week:.2f}/oz", delta=f"${(pred_week - last_actual_price):.2f} vs Today")
+        st.warning("Mid-Week (Day 3)")
+        st.metric(label="T+3 Forecast", value=f"${pred_day3:.2f}/oz", delta=f"${(pred_day3 - last_actual_price):.2f} vs Today")
     with f_col3:
-        st.error("Next Month (Day 30)")
-        st.metric(label="T+30 Forecast", value=f"${pred_month:.2f}/oz", delta=f"${(pred_month - last_actual_price):.2f} vs Today")
+        st.error("Next Week (Day 7)")
+        st.metric(label="T+7 Forecast", value=f"${pred_week:.2f}/oz", delta=f"${(pred_week - last_actual_price):.2f} vs Today")
         
     st.caption(f"🤖 Prediction generated using: **{st.session_state.model_version}**")
 
     # 8. INTERACTIVE CANDLESTICK GRAPH
     st.markdown("---")
-    st.subheader("Market Trend & 30-Day Projection (Candlestick)")
+    st.subheader("Market Trend & 7-Day Projection (Candlestick)")
     
-    future_dates = [last_date + pd.Timedelta(days=i) for i in range(1, 31)]
+    future_dates = [last_date + pd.Timedelta(days=i) for i in range(1, 8)]
     
     fig = go.Figure()
 
@@ -172,7 +171,7 @@ if st.sidebar.button("Run Prediction Pipeline"):
         x=future_dates,
         y=future_predictions.flatten(),
         mode='lines+markers',
-        name='30-Day AI Forecast',
+        name='7-Day AI Forecast',
         line=dict(color='cyan', width=2, dash='dash'),
         marker=dict(size=4, color='cyan')
     ))
