@@ -13,7 +13,7 @@ import tensorflow as tf
 
 # 1. SETUP PAGE
 st.set_page_config(page_title="Sunil raj's Gold Price MLOps", layout="wide")
-st.title("🏆Technical analysis for prediction Gold price")
+st.title("🏆Technical analysis for predicting Gold price")
 
 # 2. LOAD SAVED ASSETS
 @st.cache_resource
