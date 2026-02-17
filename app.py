@@ -11,9 +11,17 @@ import os
 import random
 import tensorflow as tf
 
-# 1. SETUP PAGE
+# 1. SETUP PAGE & STATE ROUTING
 st.set_page_config(page_title="Gold Price MLOps", layout="wide")
 st.title("🏆 Gold Price Prediction: MLOps Pipeline")
+
+# State Management for Navigation
+if 'current_view' not in st.session_state:
+    st.session_state.current_view = 'home'
+
+# Navigation Functions
+def set_view(view_name):
+    st.session_state.current_view = view_name
 
 # 2. LOAD SAVED ASSETS
 @st.cache_resource
@@ -71,37 +79,136 @@ if st.sidebar.button("⚡ Retrain on Latest Data"):
         st.sidebar.success("✅ Model Fine-Tuned (Deterministic Mode)!")
         time.sleep(1)
 
-# ----------------------------------------
+st.sidebar.markdown("---")
+st.sidebar.header("🔮 Forecasting Tools")
 
-if st.sidebar.button("🚀 Run Prediction Pipeline"):
+# Navigation Buttons in Sidebar
+if st.sidebar.button("🚀 Run Daily Pipeline"):
+    set_view('daily')
+
+if st.sidebar.button("📅 2-Month Long-Term Forecast"):
+    set_view('warning')
+
+
+# --- HELPER FUNCTIONS ---
+def get_live_data():
+    df = yf.download('GC=F', period='6mo', interval='1d')
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)
+    model_data = df['Close'].values.reshape(-1, 1)
     
-    start_time = time.time()
-    
-    # 4. DATA INGESTION
-    with st.spinner("Fetching live market data & exchange rates..."):
-        df = yf.download('GC=F', period='6mo', interval='1d')
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = df.columns.get_level_values(0)
-        model_data = df['Close'].values.reshape(-1, 1)
-        
-        try:
-            inr_data = yf.download('INR=X', period='5d')
-            if isinstance(inr_data.columns, pd.MultiIndex):
-                inr_data.columns = inr_data.columns.get_level_values(0)
-            inr_rate = float(inr_data['Close'].dropna().iloc[-1])
-        except:
-            inr_rate = 83.0
-            
+    try:
+        inr_data = yf.download('INR=X', period='5d')
+        if isinstance(inr_data.columns, pd.MultiIndex):
+            inr_data.columns = inr_data.columns.get_level_values(0)
+        inr_rate = float(inr_data['Close'].dropna().iloc[-1])
+    except:
+        inr_rate = 83.0
+    return df, model_data, inr_rate
+
+def format_price(price, inr_rate, currency, unit):
     curr_sym = "₹" if currency == "INR (₹)" else "$"
     curr_mult = inr_rate if currency == "INR (₹)" else 1.0
     unit_sym = "g" if unit == "Per Gram (g)" else "oz"
     unit_div = 31.1035 if unit == "Per Gram (g)" else 1.0
+    converted = (price * curr_mult) / unit_div
+    return f"{curr_sym}{converted:,.2f}/{unit_sym}"
 
-    def fmt(price):
-        converted = (price * curr_mult) / unit_div
-        return f"{curr_sym}{converted:,.2f}/{unit_sym}"
+
+# ==========================================
+# VIEW 1: HOME SCREEN
+# ==========================================
+if st.session_state.current_view == 'home':
+    st.info("👈 Please select a forecasting tool from the sidebar to begin.")
+
+
+# ==========================================
+# VIEW 2: THE WARNING DISCLAIMER SCREEN
+# ==========================================
+elif st.session_state.current_view == 'warning':
+    st.warning("### ⚠️ Financial Disclaimer & Alert")
+    st.markdown("""
+    **This model is completely created for Technical Analysis.** Long-term recursive forecasting carries inherent mathematical risks. Furthermore, real-world prices may vary significantly from the model's mathematical prediction due to global events, geopolitical shifts, and macroeconomic policies. 
+    
+    **Please consider doing Fundamental Analysis before relying on long-term AI projections.**
+    """)
+    
+    st.markdown("---")
+    st.write("Do you understand these risks and wish to view the 60-day AI projection?")
+    
+    colA, colB = st.columns(2)
+    with colA:
+        if st.button("✅ I Understand. Proceed to Forecast"):
+            set_view('long_term')
+            st.rerun()
+    with colB:
+        if st.button("❌ No, Go Back"):
+            set_view('daily')
+            st.rerun()
+
+
+# ==========================================
+# VIEW 3: 2-MONTH (60 DAY) FORECAST
+# ==========================================
+elif st.session_state.current_view == 'long_term':
+    st.markdown("### 📅 2-Month (60-Day) Strategic Forecast")
+    
+    with st.spinner("Calculating 60-step recursive trajectory..."):
+        df, model_data, inr_rate = get_live_data()
+        scaled_data_full = st.session_state.scaler.transform(model_data)
         
-    # 5. PREDICTION WITH AUTO-CALIBRATION
+        # Calculate Calibration Bias based on today
+        actual_today_val = model_data[-1][0]
+        X_eval = scaled_data_full[-61:-1].reshape(1, 60, 1)
+        pred_today_raw = st.session_state.scaler.inverse_transform(st.session_state.model.predict(X_eval, verbose=0))[0][0]
+        bias = actual_today_val - pred_today_raw
+        
+        # 60-Day Recursive Loop
+        future_predictions_scaled = []
+        current_input = scaled_data_full[-60:].reshape(1, 60, 1)
+
+        for _ in range(60): # 2 Months = roughly 60 trading days
+            pred = st.session_state.model.predict(current_input, verbose=0)
+            future_predictions_scaled.append(pred[0, 0])
+            new_step = np.array([[[pred[0, 0]]]])
+            current_input = np.append(current_input[:, 1:, :], new_step, axis=1)
+
+        # Decode the very last day (Day 60)
+        pred_60_raw = st.session_state.scaler.inverse_transform(np.array(future_predictions_scaled).reshape(-1, 1))[-1][0]
+        pred_2_months = pred_60_raw + bias
+        
+        actual_latest = model_data[-1][0]
+        latest_date = df.index[-1]
+        future_date = latest_date + pd.Timedelta(days=84) # 60 trading days is roughly 84 calendar days
+        
+    st.success("✅ Long-Term Forecast Generated Successfully")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("Current Market Price")
+        st.metric(label=f"As of {latest_date.strftime('%d %b %Y')}", value=format_price(actual_latest, inr_rate, currency, unit))
+    with col2:
+        st.subheader("2-Month AI Projection")
+        st.metric(label=f"Target for {future_date.strftime('%d %b %Y')}", 
+                  value=format_price(pred_2_months, inr_rate, currency, unit),
+                  delta=format_price(pred_2_months - actual_latest, inr_rate, currency, unit) + " vs Today")
+        
+    if st.button("🔙 Return to Daily Dashboard"):
+        set_view('daily')
+        st.rerun()
+
+
+# ==========================================
+# VIEW 4: NORMAL DAILY DASHBOARD
+# ==========================================
+elif st.session_state.current_view == 'daily':
+    
+    start_time = time.time()
+    
+    with st.spinner("Fetching live market data & exchange rates..."):
+        df, model_data, inr_rate = get_live_data()
+            
+    # PREDICTION WITH AUTO-CALIBRATION
     scaled_data_full = st.session_state.scaler.transform(model_data)
     eval_days = 30
     
@@ -114,7 +221,6 @@ if st.sidebar.button("🚀 Run Prediction Pipeline"):
         raw_preds_scaled = st.session_state.model.predict(X_eval, verbose=0)
         raw_preds = st.session_state.scaler.inverse_transform(raw_preds_scaled)
         
-        # Bias calculation
         actual_today_val = model_data[-1][0]
         pred_today_val_raw = raw_preds[-1][0]
         bias = actual_today_val - pred_today_val_raw
@@ -132,18 +238,15 @@ if st.sidebar.button("🚀 Run Prediction Pipeline"):
     actuals = model_data[-eval_days:]
     actual_dates = df.index[-eval_days:]
     
-    # Previous Trading Day
     actual_prev = actuals[-2][0]
     pred_prev = calibrated_preds[-2][0]
     acc_prev = 100 - (abs(pred_prev - actual_prev) / actual_prev * 100)
     
-    # Latest Trading Day
     actual_latest = actuals[-1][0]
     acc_latest = 99.85 
     
     current_time = datetime.now().strftime("%d-%b-%Y %H:%M:%S")
 
-    # 6. DASHBOARD
     st.markdown(f"### 🕒 Last Updated: {current_time} | ⚡ Latency: {(end_time - start_time):.2f}s")
     st.markdown("---")
     
@@ -151,17 +254,17 @@ if st.sidebar.button("🚀 Run Prediction Pipeline"):
     
     with col1:
         st.subheader("⏪ Previous Close")
-        st.metric(label=f"Actual ({actual_dates[-2].strftime('%d %b')})", value=fmt(actual_prev))
+        st.metric(label=f"Actual ({actual_dates[-2].strftime('%d %b')})", value=format_price(actual_prev, inr_rate, currency, unit))
         st.metric(label="AI Model Accuracy", value=f"{acc_prev:.2f}%", delta="High Precision", delta_color="normal")
 
     with col2:
         st.subheader("📊 Latest Market Data")
-        st.metric(label=f"Actual ({actual_dates[-1].strftime('%d %b')})", value=fmt(actual_latest))
+        st.metric(label=f"Actual ({actual_dates[-1].strftime('%d %b')})", value=format_price(actual_latest, inr_rate, currency, unit))
         st.metric(label="AI Model Accuracy", value=f"{acc_latest:.2f}%", delta="Calibrated", delta_color="normal")
 
     with col3:
         st.subheader("🔮 Next Trading Day")
-        st.metric(label=f"Prediction Forecast", value=fmt(pred_tomorrow), delta="Next 24 Hours")
+        st.metric(label=f"Prediction Forecast", value=format_price(pred_tomorrow, inr_rate, currency, unit), delta="Next 24 Hours")
         
         diff = pred_tomorrow - actual_latest
         if diff > 0:
@@ -171,12 +274,16 @@ if st.sidebar.button("🚀 Run Prediction Pipeline"):
             
     st.caption(f"🤖 Model Version: **{st.session_state.model_version}** | 💱 Rate: 1 USD = {inr_rate:.2f} INR")
 
-    # 7. CANDLESTICK GRAPH
     st.markdown("---")
     st.subheader("📈 Market Trend & Tomorrow's Projection")
     
     fig_candle = go.Figure()
     
+    curr_mult = inr_rate if currency == "INR (₹)" else 1.0
+    unit_div = 31.1035 if unit == "Per Gram (g)" else 1.0
+    curr_sym = "₹" if currency == "INR (₹)" else "$"
+    unit_sym = "g" if unit == "Per Gram (g)" else "oz"
+
     c_open = [(x * curr_mult) / unit_div for x in df['Open'].values.flatten()]
     c_high = [(x * curr_mult) / unit_div for x in df['High'].values.flatten()]
     c_low = [(x * curr_mult) / unit_div for x in df['Low'].values.flatten()]
@@ -187,10 +294,7 @@ if st.sidebar.button("🚀 Run Prediction Pipeline"):
         name='Market Data'
     ))
 
-    # Add Next Trading Day Point
     next_day = actual_dates[-1] + pd.Timedelta(days=1)
-    
-    # If the latest data is Friday, push the prediction to Monday on the graph
     if actual_dates[-1].weekday() == 4:
         next_day = actual_dates[-1] + pd.Timedelta(days=3)
 
@@ -211,6 +315,3 @@ if st.sidebar.button("🚀 Run Prediction Pipeline"):
         height=500
     )
     st.plotly_chart(fig_candle, use_container_width=True)
-
-else:
-    st.info("👈 Click 'Run Prediction Pipeline' to start.")
