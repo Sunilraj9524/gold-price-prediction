@@ -282,8 +282,7 @@ elif st.session_state.current_view == 'daily':
       {
       "width": "100%",
       "height": 500,
-      "symbol": "COMEX:GC1!",
-      "interval": "D",
+      "symbol": "OANDA:XAUUSD",   "interval": "D",
       "timezone": "Etc/UTC",
       "theme": "dark",
       "style": "1",
