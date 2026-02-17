@@ -1,18 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import yfinance as yf
-from tensorflow.keras.models import load_model
-import joblib
-import plotly.graph_objects as go
-from datetime import datetime
-import time
-import os
-import random
-import tensorflow as tf
-
-import streamlit as st
-import pandas as pd
 import plotly.express as px
 import requests
 import numpy as np
