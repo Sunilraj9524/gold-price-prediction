@@ -10,6 +10,7 @@ import time
 import os
 import random
 import tensorflow as tf
+import streamlit.components.v1 as components
 
 # 1. SETUP PAGE & STATE ROUTING
 st.set_page_config(page_title="Gold Price MLOps", layout="wide")
@@ -19,7 +20,6 @@ st.title("🏆 Gold Price Prediction: MLOps Pipeline")
 if 'current_view' not in st.session_state:
     st.session_state.current_view = 'home'
 
-# Navigation Functions
 def set_view(view_name):
     st.session_state.current_view = view_name
 
@@ -82,7 +82,6 @@ if st.sidebar.button("⚡ Retrain on Latest Data"):
 st.sidebar.markdown("---")
 st.sidebar.header("🔮 Forecasting Tools")
 
-# Navigation Buttons in Sidebar
 if st.sidebar.button("🚀 Run Daily Pipeline"):
     set_view('daily')
 
@@ -132,7 +131,6 @@ elif st.session_state.current_view == 'warning':
     
     **Please consider doing Fundamental Analysis before relying on long-term AI projections.**
     """)
-    
     st.markdown("---")
     st.write("Do you understand these risks and wish to view the 60-day AI projection?")
     
@@ -157,29 +155,26 @@ elif st.session_state.current_view == 'long_term':
         df, model_data, inr_rate = get_live_data()
         scaled_data_full = st.session_state.scaler.transform(model_data)
         
-        # Calculate Calibration Bias based on today
         actual_today_val = model_data[-1][0]
         X_eval = scaled_data_full[-61:-1].reshape(1, 60, 1)
         pred_today_raw = st.session_state.scaler.inverse_transform(st.session_state.model.predict(X_eval, verbose=0))[0][0]
         bias = actual_today_val - pred_today_raw
         
-        # 60-Day Recursive Loop
         future_predictions_scaled = []
         current_input = scaled_data_full[-60:].reshape(1, 60, 1)
 
-        for _ in range(60): # 2 Months = roughly 60 trading days
+        for _ in range(60): 
             pred = st.session_state.model.predict(current_input, verbose=0)
             future_predictions_scaled.append(pred[0, 0])
             new_step = np.array([[[pred[0, 0]]]])
             current_input = np.append(current_input[:, 1:, :], new_step, axis=1)
 
-        # Decode the very last day (Day 60)
         pred_60_raw = st.session_state.scaler.inverse_transform(np.array(future_predictions_scaled).reshape(-1, 1))[-1][0]
         pred_2_months = pred_60_raw + bias
         
         actual_latest = model_data[-1][0]
         latest_date = df.index[-1]
-        future_date = latest_date + pd.Timedelta(days=84) # 60 trading days is roughly 84 calendar days
+        future_date = latest_date + pd.Timedelta(days=84)
         
     st.success("✅ Long-Term Forecast Generated Successfully")
     
@@ -208,7 +203,6 @@ elif st.session_state.current_view == 'daily':
     with st.spinner("Fetching live market data & exchange rates..."):
         df, model_data, inr_rate = get_live_data()
             
-    # PREDICTION WITH AUTO-CALIBRATION
     scaled_data_full = st.session_state.scaler.transform(model_data)
     eval_days = 30
     
@@ -274,8 +268,43 @@ elif st.session_state.current_view == 'daily':
             
     st.caption(f"🤖 Model Version: **{st.session_state.model_version}** | 💱 Rate: 1 USD = {inr_rate:.2f} INR")
 
+    # --- NEW: LIVE TRADINGVIEW CHART ---
     st.markdown("---")
-    st.subheader("📈 Market Trend & Tomorrow's Projection")
+    st.subheader("🔴 Live Global Trading Chart")
+    st.write("Real-time tick data from the COMEX Gold Futures exchange.")
+    
+    tradingview_html = """
+    <div class="tradingview-widget-container">
+      <div id="tradingview_gold"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+      <script type="text/javascript">
+      new TradingView.widget(
+      {
+      "width": "100%",
+      "height": 500,
+      "symbol": "COMEX:GC1!",
+      "interval": "D",
+      "timezone": "Etc/UTC",
+      "theme": "dark",
+      "style": "1",
+      "locale": "en",
+      "enable_publishing": false,
+      "backgroundColor": "rgba(0, 0, 0, 1)",
+      "gridColor": "rgba(42, 46, 57, 0.06)",
+      "hide_top_toolbar": false,
+      "hide_legend": false,
+      "save_image": false,
+      "container_id": "tradingview_gold"
+    }
+      );
+      </script>
+    </div>
+    """
+    components.html(tradingview_html, height=500)
+
+    # --- AI TRAJECTORY GRAPH ---
+    st.markdown("---")
+    st.subheader("📈 AI Trend Analysis & Projection")
     
     fig_candle = go.Figure()
     
@@ -315,3 +344,36 @@ elif st.session_state.current_view == 'daily':
         height=500
     )
     st.plotly_chart(fig_candle, use_container_width=True)
+
+    # --- NEW: 10-DAY DATA TABLE ---
+    st.markdown("---")
+    st.subheader("📋 Recent Market Data (Last 10 Days)")
+    
+    try:
+        last_10_days = df.tail(10).sort_index(ascending=False)
+        
+        # Convert all columns dynamically based on sidebar toggles
+        col_name = f"({curr_sym}/{unit_sym})"
+        display_df = pd.DataFrame({
+            "Date": last_10_days.index.strftime('%d %b %Y'),
+            f"Open {col_name}": [(x * curr_mult) / unit_div for x in last_10_days['Open'].values.flatten()],
+            f"High {col_name}": [(x * curr_mult) / unit_div for x in last_10_days['High'].values.flatten()],
+            f"Low {col_name}": [(x * curr_mult) / unit_div for x in last_10_days['Low'].values.flatten()],
+            f"Close {col_name}": [(x * curr_mult) / unit_div for x in last_10_days['Close'].values.flatten()],
+            "Volume": [f"{int(x):,}" for x in last_10_days['Volume'].values.flatten()]
+        })
+        display_df.set_index("Date", inplace=True)
+        
+        # Format the float columns nicely
+        st.dataframe(
+            display_df.style.format(
+                "{:,.2f}", 
+                subset=[f"Open {col_name}", f"High {col_name}", f"Low {col_name}", f"Close {col_name}"]
+            ),
+            use_container_width=True
+        )
+    except Exception as e:
+        st.error(f"Could not display data table: {e}")
+
+else:
+    st.info("👈 Click 'Run Prediction Pipeline' to start.")
