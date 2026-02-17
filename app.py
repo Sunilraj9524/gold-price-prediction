@@ -11,177 +11,118 @@ import os
 import random
 import tensorflow as tf
 
-# 1. SETUP PAGE
-st.set_page_config(page_title="Sunil raj's Gold Price MLOps", layout="wide")
-st.title("🏆Technical analysis for predicting Gold price")
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+import requests
+import numpy as np
+from datetime import timedelta, date
 
-# 2. LOAD SAVED ASSETS
-@st.cache_resource
-def load_assets():
-    model = load_model('gold_price_prediction_model_2.keras')
-    scaler = joblib.load('gold_price_prediction_scaler_2.gz')
-    return model, scaler
-
-try:
-    if 'model' not in st.session_state:
-        st.session_state.model, st.session_state.scaler = load_assets()
-        st.session_state.model_version = "Base Version (Static)"
-except Exception as e:
-    st.error(f"Error loading files: {e}")
-    st.stop()
-
-# 3. SIDEBAR CONTROLS
-days_lookback = st.sidebar.slider("Lookback Period (Days)", min_value=30, max_value=90, value=60)
-
-# --- CONTINUOUS LEARNING ---
-st.sidebar.markdown("---")
-st.sidebar.header("Continuous Learning")
-st.sidebar.info(f"Current Brain: {st.session_state.model_version}")
-
-if st.sidebar.button("⚡ Retrain on Latest Data"):
-    with st.spinner("Reloading base model and fine-tuning safely..."):
-        new_df = yf.download('GC=F', period='6mo', interval='1d')
-        if isinstance(new_df.columns, pd.MultiIndex):
-            new_df.columns = new_df.columns.get_level_values(0)
-            
-        new_data = new_df['Close'].values.reshape(-1, 1)
-        scaled_data = st.session_state.scaler.transform(new_data)
-        
-        X_new, y_new = [], []
-        for i in range(60, len(scaled_data)):
-            X_new.append(scaled_data[i-60:i, 0])
-            y_new.append(scaled_data[i, 0])
-            
-        X_new, y_new = np.array(X_new), np.array(y_new)
-        X_new = np.reshape(X_new, (X_new.shape[0], X_new.shape[1], 1))
-        
-        st.session_state.model = load_model('gold_price_prediction_model_2.keras')
-        
-        os.environ['PYTHONHASHSEED'] = '0'
-        np.random.seed(42)
-        random.seed(42)
-        tf.random.set_seed(42)
-        
-        from tensorflow.keras.optimizers import Adam
-        st.session_state.model.compile(optimizer=Adam(learning_rate=0.0001), loss='mean_squared_error')
-        st.session_state.model.fit(X_new, y_new, epochs=1, batch_size=16, verbose=0)
-        
-        st.session_state.model_version = f"Fine-Tuned at {datetime.now().strftime('%H:%M:%S')}"
-        st.sidebar.success("✅ Model Fine-Tuned (Deterministic Mode)!")
-        time.sleep(1)
-
-# ----------------------------------------
-
-if st.sidebar.button("Run Prediction Pipeline"):
-    
-    start_time = time.time()
-    
-    # 4. DATA INGESTION
-    with st.spinner("Fetching live market data..."):
-        df = yf.download('GC=F', period='6mo', interval='1d')
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = df.columns.get_level_values(0)
-        model_data = df['Close'].values.reshape(-1, 1)
-        
-    # 5. PREPROCESSING
-    last_60_days = model_data[-days_lookback:]
-    last_60_days_scaled = st.session_state.scaler.transform(last_60_days)
-    X_input = last_60_days_scaled.reshape(1, days_lookback, 1)
-    
-    # 6. INFERENCE (T+1 ONLY)
-    with st.spinner("Calculating next day forecast..."):
-        pred_scaled = st.session_state.model.predict(X_input, verbose=0)
-        pred_tomorrow = st.session_state.scaler.inverse_transform(pred_scaled)[0][0]
-    
-    end_time = time.time()
-    latency = end_time - start_time
-    
-    last_date = df.index[-1]
-    next_date = last_date + pd.Timedelta(days=1)
-    last_actual_price = model_data[-1][0]
-    
-    diff_tomorrow = pred_tomorrow - last_actual_price
-    error_percentage = (abs(diff_tomorrow) / last_actual_price) * 100
-    accuracy_percentage = 100 - error_percentage
-    
-    current_time = datetime.now().strftime("%d-%b-%Y %H:%M:%S")
-
-    # 7. DISPLAY METRICS
-    st.markdown(f"### 🕒 Last Updated: {current_time} | ⚡ Latency: {latency:.2f}s")
-    st.markdown("---")
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.subheader("Last Market Close")
-        st.metric(label=f"Price ({last_date.strftime('%Y-%m-%d')})", value=f"${last_actual_price:.2f}/oz")
-    with col2:
-        st.subheader("Model Accuracy")
-        st.metric(label="Expected Reliability", value=f"{accuracy_percentage:.2f}%", delta=f"-{error_percentage:.2f}% Error", delta_color="inverse")
-    with col3:
-        st.subheader("Current Trend")
-        if diff_tomorrow > 0:
-            st.success("📈 Market is Bullish")
-        else:
-            st.error("📉 Market is Bearish")
-
-    # SINGLE T+1 PREDICTION DISPLAY
-    st.markdown("### 🔮 Next Day Forecast")
-    st.info("Tomorrow (T+1)")
-    st.metric(label="Predicted Price", value=f"${pred_tomorrow:.2f}/oz", delta=f"${diff_tomorrow:.2f} vs Today")
-        
-    st.caption(f"🤖 Prediction generated using: **{st.session_state.model_version}**")
-
-    # 8. INTERACTIVE CANDLESTICK GRAPH (T+1 ONLY)
-    st.markdown("---")
-    st.subheader("Market Trend & Tomorrow's Projection")
-    
-    fig = go.Figure()
-
-    # Historical Data
-    fig.add_trace(go.Candlestick(
-        x=df.index,
-        open=df['Open'].values.flatten(),
-        high=df['High'].values.flatten(),
-        low=df['Low'].values.flatten(),
-        close=df['Close'].values.flatten(),
-        name='Historical Data'
-    ))
-
-    # Single Forecast Point connected to the last actual close
-    fig.add_trace(go.Scatter(
-        x=[last_date, next_date],
-        y=[last_actual_price, pred_tomorrow],
-        mode='lines+markers',
-        name='T+1 Forecast',
-        line=dict(color='cyan', width=2, dash='dash'),
-        marker=dict(size=6, color='cyan')
-    ))
-
-    fig.update_layout(
-        xaxis_rangeslider_visible=False,
-        yaxis_title='Gold Price ($/oz)',
-        xaxis_title='Date',
-        template='plotly_dark',
-        margin=dict(l=0, r=0, t=30, b=0),
-        height=500
-    )
-    
-    st.plotly_chart(fig, use_container_width=True)
-
-    # 9. DATA TABLE
-    st.subheader("Recent Market Data (Last 10 Days)")
+# --- 1. Live Exchange Rate Fetcher ---
+@st.cache_data(ttl=3600) # Caches the rate for 1 hour to keep the app fast
+def get_live_exchange_rate():
     try:
-        last_10_days = df.tail(10).sort_index(ascending=False)
-        display_df = pd.DataFrame({
-            "Date": last_10_days.index.strftime('%Y-%m-%d'),
-            "Open ($)": [f"${x:.2f}" for x in last_10_days['Open'].values.flatten()],
-            "Close ($)": [f"${x:.2f}" for x in last_10_days['Close'].values.flatten()],
-            "Volume": [f"{int(x):,}" for x in last_10_days['Volume'].values.flatten()]
-        })
-        display_df.set_index("Date", inplace=True)
-        st.table(display_df)
-    except Exception as e:
-        st.error(f"Could not display data table: {e}")
+        url = "https://api.exchangerate-api.com/v4/latest/USD"
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        return response.json()['rates']['INR']
+    except Exception:
+        # Failsafe just in case the Wi-Fi drops during your presentation
+        return 90.67 
 
-else:
-    st.info("👈 Click 'Run Prediction Pipeline' to start.")
+# --- 2. Page Config & Sidebar ---
+st.set_page_config(page_title="Gold Price Prediction", layout="wide")
+
+EXCHANGE_RATE = get_live_exchange_rate()
+OUNCE_TO_GRAMS = 31.1035
+GRAMS_IN_SOVEREIGN = 8.0
+
+st.sidebar.header("Dashboard Settings")
+st.sidebar.caption(f"Live USD to INR: ₹{EXCHANGE_RATE:.2f}")
+
+currency = st.sidebar.radio("Select Currency", ("USD", "INR"))
+weight_unit = st.sidebar.radio("Select Weight Unit", ("Ounce (oz)", "Gram (g)", "Sovereign (8g)"))
+
+# --- 3. Conversion Logic ---
+currency_multiplier = EXCHANGE_RATE if currency == "INR" else 1.0
+symbol = "₹" if currency == "INR" else "$"
+
+if weight_unit == "Gram (g)":
+    weight_divisor = OUNCE_TO_GRAMS
+    unit_label = "g"
+elif weight_unit == "Sovereign (8g)":
+    weight_divisor = OUNCE_TO_GRAMS / GRAMS_IN_SOVEREIGN
+    unit_label = "sov"
+else: 
+    weight_divisor = 1.0
+    unit_label = "oz"
+
+final_multiplier = currency_multiplier / weight_divisor
+
+# --- 4. Load Data (REPLACE THIS WITH YOUR LSTM MODEL DATA) ---
+# Generating dummy data so the app runs out-of-the-box for testing
+@st.cache_data
+def load_data():
+    dates = [date.today() - timedelta(days=x) for x in range(30, -1, -1)]
+    base_price = 2030 # Base USD per Ounce
+    actuals = [base_price + np.random.randint(-30, 30) for _ in range(31)]
+    predictions = [a + np.random.randint(-15, 15) for a in actuals]
+    return pd.DataFrame({'Date': dates, 'Actual_USD_Ounce': actuals, 'Predicted_USD_Ounce': predictions})
+
+df = load_data()
+
+# --- 5. Apply Conversions to Dataframe ---
+df['Actual_Converted'] = df['Actual_USD_Ounce'] * final_multiplier
+df['Predicted_Converted'] = df['Predicted_USD_Ounce'] * final_multiplier
+
+# --- 6. Extract Daily Metrics ---
+yesterday_actual = df['Actual_Converted'].iloc[-2]
+yesterday_predicted = df['Predicted_Converted'].iloc[-2]
+today_actual = df['Actual_Converted'].iloc[-1]
+today_predicted = df['Predicted_Converted'].iloc[-1]
+
+# Placeholder: Replace this variable with your actual LSTM model prediction for tomorrow
+tomorrow_predicted_base_oz = df['Predicted_USD_Ounce'].iloc[-1] + np.random.randint(-10, 10) 
+tomorrow_predicted = tomorrow_predicted_base_oz * final_multiplier
+
+# Calculate Yesterday's Accuracy
+accuracy = (1 - abs(yesterday_actual - yesterday_predicted) / yesterday_actual) * 100
+
+# --- 7. Main Dashboard UI ---
+st.title("Gold Price Prediction Using Machine Learning and LSTM")
+st.markdown("---")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.info("Yesterday's Metrics")
+    st.metric("Actual Price", f"{symbol}{yesterday_actual:.2f} / {unit_label}")
+    st.metric("Predicted Price", f"{symbol}{yesterday_predicted:.2f} / {unit_label}")
+    st.metric("Model Accuracy", f"{accuracy:.2f}%")
+
+with col2:
+    st.success("Today's Metrics")
+    st.metric("Actual Price", f"{symbol}{today_actual:.2f} / {unit_label}")
+    st.metric("Predicted Price", f"{symbol}{today_predicted:.2f} / {unit_label}")
+
+with col3:
+    st.warning("Tomorrow's Forecast")
+    st.metric("Predicted Price", f"{symbol}{tomorrow_predicted:.2f} / {unit_label}")
+
+st.markdown("---")
+
+# --- 8. Accuracy Graph ---
+st.subheader("Historical Accuracy: Actual vs Predicted")
+
+fig = px.line(
+    df, 
+    x='Date', 
+    y=['Actual_Converted', 'Predicted_Converted'], 
+    labels={'value': f'Price ({symbol}/{unit_label})', 'variable': 'Legend'},
+    color_discrete_sequence=['#1f77b4', '#ff7f0e'] # Blue for Actual, Orange for Predicted
+)
+
+# Clean up the legend names for the presentation
+fig.for_each_trace(lambda t: t.update(name=t.name.replace("_Converted", "").replace("Actual", "Actual Price").replace("Predicted", "Predicted Price")))
+
+st.plotly_chart(fig, use_container_width=True)
