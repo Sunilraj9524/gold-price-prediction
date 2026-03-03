@@ -13,8 +13,8 @@ import tensorflow as tf
 import streamlit.components.v1 as components
 
 # 1. SETUP PAGE & STATE ROUTING
-st.set_page_config(page_title="Gold Price MLOps", layout="wide")
-st.title("🏆 Gold Price Prediction: MLOps Pipeline")
+st.set_page_config(page_title="Gold Price prediction", layout="wide")
+st.title("technical analysis on gold")
 
 # State Management for Navigation
 if 'current_view' not in st.session_state:
@@ -44,7 +44,6 @@ currency = st.sidebar.radio("Currency", ["USD ($)", "INR (₹)"])
 unit = st.sidebar.radio("Unit", ["Per Ounce (oz)", "Per Gram (g)"])
 
 st.sidebar.markdown("---")
-st.sidebar.header("🧠 Continuous Learning")
 st.sidebar.info(f"Current Brain: {st.session_state.model_version}")
 
 if st.sidebar.button("⚡ Retrain on Latest Data"):
@@ -80,9 +79,9 @@ if st.sidebar.button("⚡ Retrain on Latest Data"):
         time.sleep(1)
 
 st.sidebar.markdown("---")
-st.sidebar.header("🔮 Forecasting Tools")
+st.sidebar.header("Forecasting Tools")
 
-if st.sidebar.button("🚀 Run Daily Pipeline"):
+if st.sidebar.button(" Run Daily Forecasting"):
     set_view('daily')
 
 if st.sidebar.button("📅 2-Month Long-Term Forecast"):
