@@ -14,7 +14,7 @@ import streamlit.components.v1 as components
 
 # 1. SETUP PAGE & STATE ROUTING
 st.set_page_config(page_title="Gold Price prediction", layout="wide")
-st.title("technical analysis on gold")
+st.title("Technical analysis on gold")
 
 # State Management for Navigation
 if 'current_view' not in st.session_state:
