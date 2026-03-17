@@ -253,7 +253,7 @@ elif st.session_state.current_view == 'daily':
     with col2:
         st.subheader("📊 Latest Market Data")
         st.metric(label=f"Actual ({actual_dates[-1].strftime('%d %b')})", value=format_price(actual_latest, inr_rate, currency, unit))
-        st.metric(label="AI Model Accuracy", value=f"{acc_latest:.2f}%", delta="Calibrated", delta_color="normal")
+        
 
     with col3:
         st.subheader("🔮 Next Trading Day")
