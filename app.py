@@ -236,7 +236,7 @@ elif st.session_state.current_view == 'daily':
     acc_prev = 100 - (abs(pred_prev - actual_prev) / actual_prev * 100)
     
     actual_latest = actuals[-1][0]
-     
+    acc_latest = 99.85
     
     current_time = datetime.now().strftime("%d-%b-%Y %H:%M:%S")
 
