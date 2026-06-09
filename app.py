@@ -825,6 +825,40 @@ elif st.session_state.current_view == 'daily':
     )
     st.plotly_chart(fig_candle, use_container_width=True)
 
+    # After this line in your code:
+raw_preds = st.session_state.scaler.inverse_transform(raw_preds_scaled)
+
+# Add this block:
+from sklearn.metrics import mean_absolute_error
+import numpy as np
+
+actuals_30 = model_data[-30:]
+raw_preds_30 = raw_preds  # no bias applied
+
+# 1. Raw MAE (dollars off on average)
+mae = mean_absolute_error(actuals_30, raw_preds_30)
+
+# 2. Raw accuracy %
+raw_acc = 100 - (abs(raw_preds_30[-2][0] - actuals_30[-2][0]) / actuals_30[-2][0] * 100)
+
+# 3. Directional accuracy (most important)
+correct_directions = 0
+for i in range(1, len(actuals_30)):
+    actual_dir = actuals_30[i] > actuals_30[i-1]
+    pred_dir = raw_preds_30[i] > raw_preds_30[i-1]
+    if actual_dir == pred_dir:
+        correct_directions += 1
+directional_acc = (correct_directions / (len(actuals_30)-1)) * 100
+
+# 4. Naive baseline (is your model better than "tomorrow = today"?)
+naive_mae = mean_absolute_error(actuals_30[1:], actuals_30[:-1])
+
+st.write(f"Raw MAE: ${mae:.2f}")
+st.write(f"Raw Yesterday Accuracy: {raw_acc:.2f}%")
+st.write(f"Directional Accuracy: {directional_acc:.2f}%")
+st.write(f"Naive Baseline MAE: ${naive_mae:.2f}")
+st.write(f"Model better than naive? {mae < naive_mae}")
+
     # ── Data Table ──
     st.markdown("---")
     st.markdown('<div class="section-label">📋 Recent Market Data — Last 10 Sessions</div>', unsafe_allow_html=True)
@@ -852,3 +886,4 @@ elif st.session_state.current_view == 'daily':
 
 else:
     st.info("👈 Select a forecasting tool from the sidebar to begin.")
+    
