@@ -28,7 +28,6 @@ st.markdown("""
     --gold-bright:   #FFD166;
     --gold-mid:      #E6A817;
     --gold-deep:     #B8860B;
-    --blue-sky:      #91C8F6;
     --glass-bg:      rgba(255, 255, 255, 0.06);
     --glass-border:  rgba(255, 209, 102, 0.20);
     --glass-blur:    blur(18px);
