@@ -13,7 +13,7 @@ import tensorflow as tf
 import streamlit.components.v1 as components
 
 # 1. SETUP PAGE & STATE ROUTING
-st.set_page_config(page_title="AuraGold — AI Price Intelligence", layout="wide", page_icon="✨")
+st.set_page_config(page_title="AI Price Intelligence", layout="wide", page_icon="🥇")
 
 # ==========================================
 # GLASSMORPHISM CSS INJECTION
@@ -21,7 +21,7 @@ st.set_page_config(page_title="AuraGold — AI Price Intelligence", layout="wide
 st.markdown("""
 <style>
 /* ── Google Fonts ── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
 /* ── Root Variables ── */
 :root {
@@ -83,7 +83,7 @@ html, body,
 }
 [data-testid="stSidebar"] * {
     color: var(--text-primary) !important;
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'DM Sans', sans-serif !important;
 }
 
 /* ── Sidebar Buttons ── */
@@ -93,7 +93,7 @@ html, body,
     border-radius: 10px !important;
     color: var(--gold-mid) !important;
     font-weight: 600 !important;
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'DM Sans', sans-serif !important;
     letter-spacing: 0.3px !important;
     transition: all 0.25s ease !important;
     width: 100% !important;
@@ -109,7 +109,7 @@ html, body,
 /* ── Main area ── */
 [data-testid="stMain"], .main, .block-container {
     background: transparent !important;
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'DM Sans', sans-serif !important;
     color: var(--text-primary) !important;
 }
 .block-container {
@@ -119,25 +119,25 @@ html, body,
 
 /* ── Page Title ── */
 h1 {
-    font-family: 'Space Grotesk', sans-serif !important;
+    font-family: 'Playfair Display', serif !important;
     font-weight: 700 !important;
-    font-size: 2.4rem !important;
+    font-size: 2.3rem !important;
     background: linear-gradient(90deg, #8B5E0A 0%, #C8922A 40%, #8B5E0A 100%) !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
     background-clip: text !important;
-    letter-spacing: -0.5px !important;
+    letter-spacing: 0.2px !important;
     margin-bottom: 0.2rem !important;
     text-shadow: none !important;
 }
 
 /* ── All headings ── */
 h2, h3 {
-    font-family: 'Space Grotesk', sans-serif !important;
+    font-family: 'Playfair Display', serif !important;
     color: var(--text-primary) !important;
     font-weight: 600 !important;
 }
-h3 { font-size: 1.15rem !important; color: var(--gold-mid) !important; }
+h3 { font-size: 1.1rem !important; color: var(--gold-mid) !important; }
 
 /* ── Glass Card ── */
 .glass-card {
@@ -191,13 +191,14 @@ h3 { font-size: 1.15rem !important; color: var(--gold-mid) !important; }
     font-weight: 600 !important;
     letter-spacing: 0.8px !important;
     text-transform: uppercase !important;
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'DM Sans', sans-serif !important;
 }
 [data-testid="stMetricValue"] {
-    font-family: 'Space Grotesk', sans-serif !important;
+    font-family: 'DM Mono', monospace !important;
     color: var(--gold-mid) !important;
-    font-weight: 700 !important;
-    font-size: 1.55rem !important;
+    font-weight: 500 !important;
+    font-size: 1.50rem !important;
+    letter-spacing: -0.5px !important;
 }
 [data-testid="stMetricDelta"] {
     font-size: 0.8rem !important;
@@ -221,7 +222,7 @@ hr {
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
     color: var(--text-primary) !important;
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'DM Sans', sans-serif !important;
     box-shadow: 0 4px 20px rgba(180,140,40,0.10) !important;
 }
 
@@ -232,7 +233,7 @@ hr {
     border-radius: 12px !important;
     color: var(--gold-mid) !important;
     font-weight: 600 !important;
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'DM Sans', sans-serif !important;
     font-size: 0.9rem !important;
     padding: 0.55rem 1.4rem !important;
     letter-spacing: 0.3px !important;
@@ -256,7 +257,7 @@ hr {
 /* ── Caption ── */
 .stCaption, caption {
     color: var(--text-muted) !important;
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'DM Sans', sans-serif !important;
     font-size: 0.78rem !important;
 }
 
@@ -272,7 +273,7 @@ hr {
 }
 [data-testid="stDataFrame"] table {
     color: var(--text-primary) !important;
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'DM Sans', sans-serif !important;
     font-size: 0.85rem !important;
 }
 [data-testid="stDataFrame"] th {
@@ -307,7 +308,7 @@ hr {
     display: flex;
     align-items: center;
     gap: 0.7rem;
-    font-family: 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 0.82rem;
     color: var(--text-muted);
     backdrop-filter: var(--glass-blur);
@@ -329,10 +330,10 @@ hr {
 
 /* ── Section label ── */
 .section-label {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.70rem;
-    font-weight: 700;
-    letter-spacing: 1.4px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 1.8px;
     text-transform: uppercase;
     color: var(--gold-mid);
     margin-bottom: 0.8rem;
@@ -364,19 +365,22 @@ hr {
         inset 0 -1px 0 rgba(180,140,40,0.08);
 }
 .home-hero h2 {
-    font-family: 'Space Grotesk', sans-serif !important;
+    font-family: 'Playfair Display', serif !important;
     font-size: 2rem !important;
+    font-weight: 600 !important;
     background: linear-gradient(90deg, #8B5E0A, #C8922A, #8B5E0A) !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
     background-clip: text !important;
     margin-bottom: 0.8rem !important;
+    letter-spacing: 0.2px !important;
 }
 .home-hero p {
     color: rgba(80, 60, 20, 0.70);
-    font-size: 1rem;
-    line-height: 1.7;
-    font-family: 'Inter', sans-serif;
+    font-size: 0.98rem;
+    line-height: 1.8;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
 }
 .home-icon {
     font-size: 3.5rem;
@@ -406,7 +410,7 @@ hr {
     font-size: 0.85rem;
     font-weight: 600;
     color: #1A7A4A;
-    font-family: 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     backdrop-filter: blur(8px);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.80);
 }
@@ -419,7 +423,7 @@ hr {
     font-size: 0.85rem;
     font-weight: 600;
     color: #B83248;
-    font-family: 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     backdrop-filter: blur(8px);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.80);
 }
@@ -428,28 +432,28 @@ hr {
 .sidebar-logo {
     text-align: center;
     padding: 1rem 0 0.5rem 0;
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 1.25rem;
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    font-size: 1.1rem;
     background: linear-gradient(90deg, #8B5E0A, #C8922A);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
 }
 .sidebar-sub {
     text-align: center;
-    font-size: 0.7rem;
-    letter-spacing: 1.5px;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
     text-transform: uppercase;
     color: rgba(80, 60, 20, 0.50) !important;
     margin-bottom: 1rem;
-    font-family: 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
 }
 
 /* ── Radio buttons ── */
 [data-testid="stRadio"] label {
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'DM Sans', sans-serif !important;
     font-size: 0.88rem !important;
     color: var(--text-primary) !important;
 }
@@ -463,7 +467,7 @@ hr {
     border: 1px solid rgba(200, 146, 42, 0.30) !important;
     border-radius: 10px !important;
     color: var(--gold-mid) !important;
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'DM Sans', sans-serif !important;
     font-size: 0.8rem !important;
     backdrop-filter: blur(10px) !important;
 }
@@ -471,7 +475,7 @@ hr {
 """, unsafe_allow_html=True)
 
 # ── Page title (rendered by Streamlit so CSS h1 applies) ──
-st.title("✦ AuraGold — AI Price Intelligence")
+st.title("✦ AI Price Intelligence")
 
 # State Management
 if 'current_view' not in st.session_state:
@@ -496,7 +500,7 @@ except Exception as e:
     st.stop()
 
 # 3. SIDEBAR
-st.sidebar.markdown('<div class="sidebar-logo">✦ AuraGold</div>', unsafe_allow_html=True)
+st.sidebar.markdown('<div class="sidebar-logo">✦ AI Price Intelligence</div>', unsafe_allow_html=True)
 st.sidebar.markdown('<div class="sidebar-sub">AI Price Intelligence</div>', unsafe_allow_html=True)
 st.sidebar.markdown("---")
 
@@ -588,13 +592,13 @@ elif st.session_state.current_view == 'warning':
     st.markdown('<div class="section-label">⚠️ Risk Disclosure</div>', unsafe_allow_html=True)
     st.markdown("""
     <div class="disclaimer-card">
-        <h3 style="color:#B83248; font-family:'Space Grotesk',sans-serif; margin-top:0;">Financial Disclaimer</h3>
-        <p style="color:rgba(60,40,10,0.85); font-family:'Inter',sans-serif; line-height:1.7; font-size:0.95rem;">
+        <h3 style="color:#B83248; font-family:'Playfair Display',serif; margin-top:0;">Financial Disclaimer</h3>
+        <p style="color:rgba(60,40,10,0.85); font-family:'DM Sans',sans-serif; line-height:1.7; font-size:0.95rem;">
             This model is built for <strong style="color:#8B5E0A;">Technical Analysis only</strong>. Long-term recursive forecasting carries 
             inherent mathematical drift risks. Real-world prices may diverge significantly due to geopolitical events, 
             central bank policy, and macroeconomic shifts.
         </p>
-        <p style="color:rgba(60,40,10,0.60); font-family:'Inter',sans-serif; line-height:1.7; font-size:0.88rem; margin-bottom:0;">
+        <p style="color:rgba(60,40,10,0.60); font-family:'DM Sans',sans-serif; line-height:1.7; font-size:0.88rem; margin-bottom:0;">
             Always conduct independent Fundamental Analysis before acting on any AI projection.
         </p>
     </div>
