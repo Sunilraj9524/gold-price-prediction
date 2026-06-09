@@ -13,7 +13,7 @@ import tensorflow as tf
 import streamlit.components.v1 as components
 
 # 1. SETUP PAGE & STATE ROUTING
-st.set_page_config(page_title="AuraGold — AI Price Intelligence", layout="wide", page_icon="✨")
+st.set_page_config(page_title="AI GOLD Price Intelligence", layout="wide", page_icon="✨")
 
 # ==========================================
 # GLASSMORPHISM CSS INJECTION
