@@ -436,7 +436,7 @@ hr {
 """, unsafe_allow_html=True)
 
 # ── Page title (rendered by Streamlit so CSS h1 applies) ──
-st.title("✦ AuraGold — AI Price Intelligence")
+st.title("✦ AI Gold Price Intelligence")
 
 # State Management
 if 'current_view' not in st.session_state:
