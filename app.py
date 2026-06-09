@@ -13,7 +13,7 @@ import tensorflow as tf
 import streamlit.components.v1 as components
 
 # 1. SETUP PAGE & STATE ROUTING
-st.set_page_config(page_title="AI GOLD Price Intelligence", layout="wide", page_icon="✨")
+st.set_page_config(page_title="AuraGold — AI Price Intelligence", layout="wide", page_icon="✨")
 
 # ==========================================
 # GLASSMORPHISM CSS INJECTION
@@ -22,87 +22,91 @@ st.markdown("""
 <style>
 /* ── Google Fonts ── */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 /* ── Root Variables ── */
 :root {
-    --gold-bright:   #FFD166;
-    --gold-mid:      #E6A817;
-    --gold-deep:     #B8860B;
-    --glass-bg:      rgba(255, 255, 255, 0.06);
-    --glass-border:  rgba(255, 209, 102, 0.20);
-    --glass-blur:    blur(18px);
-    --text-primary:  #F0F4FF;
-    --text-muted:    rgba(200, 215, 255, 0.65);
-    --success:       #4EFAA7;
-    --danger:        #FF6B8A;
+    --gold-bright:   #C8922A;
+    --gold-mid:      #B07D20;
+    --gold-light:    #F0C060;
+    --gold-glow:     rgba(230, 175, 60, 0.55);
+    --glass-white:   rgba(255, 255, 255, 0.55);
+    --glass-border:  rgba(255, 255, 255, 0.75);
+    --glass-shadow:  rgba(180, 140, 40, 0.18);
+    --glass-blur:    blur(22px) saturate(180%);
+    --text-primary:  #2A1F0A;
+    --text-muted:    rgba(80, 60, 20, 0.65);
+    --success:       #1A7A4A;
+    --danger:        #B83248;
 }
 
-/* ── Full-page Background ── */
-html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
+/* ════════════════════════════════
+   BACKGROUND — the key to real glass
+   ════════════════════════════════ */
+html, body,
+[data-testid="stAppViewContainer"],
+[data-testid="stApp"] {
     background: transparent !important;
 }
 
+/* Layer 1 — base white-cream canvas */
 [data-testid="stAppViewContainer"]::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -3;
+    background: #FAF6EE;
+}
+
+/* Layer 2 — large vivid colour blobs (what gets blurred through the glass) */
+[data-testid="stAppViewContainer"]::after {
     content: '';
     position: fixed;
     inset: 0;
     z-index: -2;
     background:
-        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(58, 134, 255, 0.28) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(230, 168, 23, 0.18) 0%, transparent 55%),
-        radial-gradient(ellipse 50% 40% at 60% 30%, rgba(145, 200, 246, 0.14) 0%, transparent 50%),
-        linear-gradient(135deg, #060D1F 0%, #0D1B3E 40%, #0A1628 70%, #06111E 100%);
-    background-attachment: fixed;
-}
-
-/* Floating orbs */
-[data-testid="stAppViewContainer"]::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background:
-        radial-gradient(circle 300px at 15% 25%, rgba(58, 134, 255, 0.12) 0%, transparent 70%),
-        radial-gradient(circle 200px at 85% 15%, rgba(255, 209, 102, 0.10) 0%, transparent 70%),
-        radial-gradient(circle 250px at 70% 75%, rgba(58, 134, 255, 0.08) 0%, transparent 70%);
+        radial-gradient(ellipse 70% 55% at 8%  12%,  rgba(255, 210,  80, 0.72) 0%, transparent 65%),
+        radial-gradient(ellipse 55% 45% at 92% 10%,  rgba(255, 180,  40, 0.60) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 50% 92%,  rgba(240, 160,  20, 0.55) 0%, transparent 65%),
+        radial-gradient(ellipse 45% 40% at 78% 55%,  rgba(255, 230, 120, 0.50) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 35% at 22% 70%,  rgba(250, 200,  60, 0.45) 0%, transparent 55%),
+        radial-gradient(ellipse 30% 25% at 60% 35%,  rgba(255, 255, 200, 0.40) 0%, transparent 50%);
     pointer-events: none;
 }
 
 /* ── Sidebar Glass ── */
 [data-testid="stSidebar"] {
-    background: rgba(10, 22, 50, 0.75) !important;
+    background: rgba(255, 252, 240, 0.60) !important;
     backdrop-filter: var(--glass-blur) !important;
     -webkit-backdrop-filter: var(--glass-blur) !important;
-    border-right: 1px solid var(--glass-border) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.80) !important;
+    box-shadow: 4px 0 30px rgba(180, 140, 40, 0.12) !important;
 }
 [data-testid="stSidebar"] * {
     color: var(--text-primary) !important;
     font-family: 'Inter', sans-serif !important;
 }
-[data-testid="stSidebar"] .stRadio label,
-[data-testid="stSidebar"] .stButton button {
-    color: var(--text-primary) !important;
-}
 
 /* ── Sidebar Buttons ── */
 [data-testid="stSidebar"] .stButton button {
-    background: linear-gradient(135deg, rgba(255, 209, 102, 0.15), rgba(58, 134, 255, 0.10)) !important;
-    border: 1px solid rgba(255, 209, 102, 0.35) !important;
+    background: rgba(255, 255, 255, 0.55) !important;
+    border: 1px solid rgba(200, 146, 42, 0.45) !important;
     border-radius: 10px !important;
-    color: var(--gold-bright) !important;
+    color: var(--gold-mid) !important;
     font-weight: 600 !important;
     font-family: 'Inter', sans-serif !important;
     letter-spacing: 0.3px !important;
     transition: all 0.25s ease !important;
     width: 100% !important;
+    box-shadow: 0 2px 12px rgba(180,140,40,0.10) !important;
 }
 [data-testid="stSidebar"] .stButton button:hover {
-    background: linear-gradient(135deg, rgba(255, 209, 102, 0.28), rgba(58, 134, 255, 0.18)) !important;
+    background: rgba(255, 255, 255, 0.80) !important;
     border-color: var(--gold-bright) !important;
-    box-shadow: 0 0 20px rgba(255, 209, 102, 0.25) !important;
+    box-shadow: 0 4px 20px rgba(200, 146, 42, 0.28) !important;
     transform: translateY(-1px) !important;
 }
 
-/* ── Main area text ── */
+/* ── Main area ── */
 [data-testid="stMain"], .main, .block-container {
     background: transparent !important;
     font-family: 'Inter', sans-serif !important;
@@ -118,12 +122,13 @@ h1 {
     font-family: 'Space Grotesk', sans-serif !important;
     font-weight: 700 !important;
     font-size: 2.4rem !important;
-    background: linear-gradient(90deg, var(--gold-bright) 0%, var(--blue-sky) 60%, var(--gold-bright) 100%) !important;
+    background: linear-gradient(90deg, #8B5E0A 0%, #C8922A 40%, #8B5E0A 100%) !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
     background-clip: text !important;
     letter-spacing: -0.5px !important;
     margin-bottom: 0.2rem !important;
+    text-shadow: none !important;
 }
 
 /* ── All headings ── */
@@ -132,101 +137,120 @@ h2, h3 {
     color: var(--text-primary) !important;
     font-weight: 600 !important;
 }
-h3 { font-size: 1.15rem !important; color: var(--gold-bright) !important; }
+h3 { font-size: 1.15rem !important; color: var(--gold-mid) !important; }
 
-/* ── Glass Card (applied via st.markdown containers) ── */
+/* ── Glass Card ── */
 .glass-card {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.50);
+    border: 1px solid rgba(255, 255, 255, 0.80);
+    border-radius: 20px;
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
     padding: 1.4rem 1.6rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    box-shadow:
+        0 8px 32px rgba(180, 140, 40, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.90),
+        inset 0 -1px 0 rgba(180, 140, 40, 0.08);
     transition: box-shadow 0.3s ease, transform 0.3s ease;
     margin-bottom: 1rem;
 }
 .glass-card:hover {
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 209, 102, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    box-shadow:
+        0 14px 44px rgba(180, 140, 40, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 1.0),
+        0 0 0 1px rgba(200, 146, 42, 0.30);
     transform: translateY(-2px);
 }
 
-/* ── Metric Cards (override Streamlit metric) ── */
+/* ── Metric Cards ── */
 [data-testid="stMetric"] {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 209, 102, 0.18) !important;
-    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.52) !important;
+    border: 1px solid rgba(255, 255, 255, 0.85) !important;
+    border-radius: 18px !important;
     padding: 1.2rem 1.4rem !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: var(--glass-blur) !important;
+    -webkit-backdrop-filter: var(--glass-blur) !important;
+    box-shadow:
+        0 6px 28px rgba(180, 140, 40, 0.13),
+        inset 0 1.5px 0 rgba(255,255,255,0.95),
+        inset 0 -1px 0 rgba(180,140,40,0.06) !important;
     transition: all 0.3s ease !important;
 }
 [data-testid="stMetric"]:hover {
-    border-color: rgba(255, 209, 102, 0.40) !important;
-    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 209, 102, 0.25) !important;
+    background: rgba(255, 255, 255, 0.72) !important;
+    border-color: rgba(200, 146, 42, 0.45) !important;
+    box-shadow:
+        0 10px 36px rgba(180, 140, 40, 0.22),
+        inset 0 1.5px 0 rgba(255,255,255,1.0),
+        0 0 0 1px rgba(200, 146, 42, 0.28) !important;
+    transform: translateY(-2px) !important;
 }
 [data-testid="stMetricLabel"] {
     color: var(--text-muted) !important;
-    font-size: 0.78rem !important;
-    font-weight: 500 !important;
-    letter-spacing: 0.6px !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.8px !important;
     text-transform: uppercase !important;
     font-family: 'Inter', sans-serif !important;
 }
 [data-testid="stMetricValue"] {
     font-family: 'Space Grotesk', sans-serif !important;
-    color: var(--gold-bright) !important;
+    color: var(--gold-mid) !important;
     font-weight: 700 !important;
     font-size: 1.55rem !important;
 }
 [data-testid="stMetricDelta"] {
     font-size: 0.8rem !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
+    color: var(--text-muted) !important;
 }
 
 /* ── Divider ── */
 hr {
     border: none !important;
     height: 1px !important;
-    background: linear-gradient(90deg, transparent, rgba(255, 209, 102, 0.3), rgba(58, 134, 255, 0.3), transparent) !important;
+    background: linear-gradient(90deg, transparent, rgba(200,146,42,0.35), rgba(200,146,42,0.20), transparent) !important;
     margin: 1.2rem 0 !important;
 }
 
-/* ── Info / Warning / Success / Error boxes ── */
+/* ── Alert boxes ── */
 [data-testid="stAlert"] {
-    background: rgba(255, 255, 255, 0.05) !important;
+    background: rgba(255, 255, 255, 0.50) !important;
     border-radius: 14px !important;
-    border: 1px solid rgba(255, 209, 102, 0.25) !important;
-    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
     color: var(--text-primary) !important;
     font-family: 'Inter', sans-serif !important;
+    box-shadow: 0 4px 20px rgba(180,140,40,0.10) !important;
 }
 
-/* ── Main page buttons (warning/long_term/daily views) ── */
+/* ── Buttons ── */
 .stButton button {
-    background: linear-gradient(135deg, rgba(255, 209, 102, 0.18) 0%, rgba(58, 134, 255, 0.12) 100%) !important;
-    border: 1px solid rgba(255, 209, 102, 0.40) !important;
+    background: rgba(255, 255, 255, 0.55) !important;
+    border: 1px solid rgba(200, 146, 42, 0.42) !important;
     border-radius: 12px !important;
-    color: var(--gold-bright) !important;
+    color: var(--gold-mid) !important;
     font-weight: 600 !important;
     font-family: 'Inter', sans-serif !important;
     font-size: 0.9rem !important;
     padding: 0.55rem 1.4rem !important;
     letter-spacing: 0.3px !important;
     transition: all 0.25s ease !important;
+    box-shadow: 0 2px 12px rgba(180,140,40,0.12) !important;
+    backdrop-filter: blur(10px) !important;
 }
 .stButton button:hover {
-    background: linear-gradient(135deg, rgba(255, 209, 102, 0.30) 0%, rgba(58, 134, 255, 0.22) 100%) !important;
+    background: rgba(255, 255, 255, 0.82) !important;
     border-color: var(--gold-bright) !important;
-    box-shadow: 0 0 24px rgba(255, 209, 102, 0.3), 0 4px 16px rgba(0,0,0,0.3) !important;
+    box-shadow: 0 6px 24px rgba(200,146,42,0.30) !important;
     transform: translateY(-1px) !important;
 }
 
 /* ── Spinner ── */
 [data-testid="stSpinner"] * {
-    color: var(--gold-bright) !important;
-    border-top-color: var(--gold-bright) !important;
+    color: var(--gold-mid) !important;
+    border-top-color: var(--gold-mid) !important;
 }
 
 /* ── Caption ── */
@@ -238,11 +262,13 @@ hr {
 
 /* ── Dataframe ── */
 [data-testid="stDataFrame"] {
-    background: rgba(255, 255, 255, 0.04) !important;
-    border: 1px solid var(--glass-border) !important;
-    border-radius: 14px !important;
-    backdrop-filter: blur(10px) !important;
+    background: rgba(255, 255, 255, 0.48) !important;
+    border: 1px solid rgba(255, 255, 255, 0.80) !important;
+    border-radius: 16px !important;
+    backdrop-filter: var(--glass-blur) !important;
+    -webkit-backdrop-filter: var(--glass-blur) !important;
     overflow: hidden !important;
+    box-shadow: 0 4px 20px rgba(180,140,40,0.10) !important;
 }
 [data-testid="stDataFrame"] table {
     color: var(--text-primary) !important;
@@ -250,60 +276,63 @@ hr {
     font-size: 0.85rem !important;
 }
 [data-testid="stDataFrame"] th {
-    background: rgba(255, 209, 102, 0.10) !important;
-    color: var(--gold-bright) !important;
+    background: rgba(240, 192, 96, 0.18) !important;
+    color: var(--gold-mid) !important;
     font-weight: 600 !important;
     text-transform: uppercase !important;
     font-size: 0.72rem !important;
     letter-spacing: 0.5px !important;
-    border-bottom: 1px solid rgba(255, 209, 102, 0.2) !important;
+    border-bottom: 1px solid rgba(200,146,42,0.20) !important;
 }
 [data-testid="stDataFrame"] td {
-    border-color: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(200,146,42,0.08) !important;
+    color: var(--text-primary) !important;
 }
 [data-testid="stDataFrame"] tr:hover td {
-    background: rgba(255, 209, 102, 0.06) !important;
+    background: rgba(255,210,80,0.10) !important;
 }
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 4px; }
-::-webkit-scrollbar-thumb { background: rgba(255, 209, 102, 0.25); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255, 209, 102, 0.45); }
+::-webkit-scrollbar-track { background: rgba(255,255,255,0.4); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(200,146,42,0.30); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(200,146,42,0.55); }
 
 /* ── Status bar ── */
 .status-bar {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 209, 102, 0.15);
-    border-radius: 12px;
-    padding: 0.6rem 1.2rem;
+    background: rgba(255, 255, 255, 0.52);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 14px;
+    padding: 0.65rem 1.3rem;
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.7rem;
     font-family: 'Inter', sans-serif;
     font-size: 0.82rem;
     color: var(--text-muted);
-    backdrop-filter: blur(10px);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: 0 4px 20px rgba(180,140,40,0.10), inset 0 1px 0 rgba(255,255,255,0.90);
     margin-bottom: 1rem;
 }
 .status-dot {
     width: 7px; height: 7px;
-    background: var(--success);
+    background: #1A7A4A;
     border-radius: 50%;
-    box-shadow: 0 0 8px var(--success);
+    box-shadow: 0 0 8px rgba(26,122,74,0.7);
     animation: pulse 2s infinite;
 }
 @keyframes pulse {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+    50%       { opacity: 0.35; }
 }
 
 /* ── Section label ── */
 .section-label {
     font-family: 'Inter', sans-serif;
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 1.2px;
+    font-size: 0.70rem;
+    font-weight: 700;
+    letter-spacing: 1.4px;
     text-transform: uppercase;
     color: var(--gold-mid);
     margin-bottom: 0.8rem;
@@ -315,32 +344,36 @@ hr {
     content: '';
     flex: 1;
     height: 1px;
-    background: linear-gradient(90deg, rgba(255,209,102,0.3), transparent);
+    background: linear-gradient(90deg, rgba(200,146,42,0.35), transparent);
 }
 
 /* ── Home welcome card ── */
 .home-hero {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,209,102,0.20);
-    border-radius: 22px;
-    backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.90);
+    border-radius: 24px;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     padding: 3rem 2.5rem;
     text-align: center;
     margin: 2rem auto;
     max-width: 680px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.07);
+    box-shadow:
+        0 20px 60px rgba(180,140,40,0.16),
+        inset 0 1.5px 0 rgba(255,255,255,1.0),
+        inset 0 -1px 0 rgba(180,140,40,0.08);
 }
 .home-hero h2 {
     font-family: 'Space Grotesk', sans-serif !important;
     font-size: 2rem !important;
-    background: linear-gradient(90deg, #FFD166, #91C8F6) !important;
+    background: linear-gradient(90deg, #8B5E0A, #C8922A, #8B5E0A) !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
     background-clip: text !important;
     margin-bottom: 0.8rem !important;
 }
 .home-hero p {
-    color: rgba(200,215,255,0.7);
+    color: rgba(80, 60, 20, 0.70);
     font-size: 1rem;
     line-height: 1.7;
     font-family: 'Inter', sans-serif;
@@ -353,36 +386,42 @@ hr {
 
 /* ── Warning disclaimer card ── */
 .disclaimer-card {
-    background: rgba(255, 107, 138, 0.08);
-    border: 1px solid rgba(255, 107, 138, 0.30);
+    background: rgba(255, 240, 230, 0.65);
+    border: 1px solid rgba(220, 100, 60, 0.28);
     border-radius: 18px;
-    backdrop-filter: blur(16px);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     padding: 2rem;
     margin-bottom: 1.5rem;
+    box-shadow: 0 6px 24px rgba(200,80,40,0.10), inset 0 1px 0 rgba(255,255,255,0.80);
 }
 
 /* ── Trend badges ── */
 .trend-bull {
     display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(78, 250, 167, 0.12);
-    border: 1px solid rgba(78, 250, 167, 0.35);
+    background: rgba(220, 255, 235, 0.70);
+    border: 1px solid rgba(26, 122, 74, 0.35);
     border-radius: 8px;
     padding: 0.35rem 0.9rem;
     font-size: 0.85rem;
     font-weight: 600;
-    color: #4EFAA7;
+    color: #1A7A4A;
     font-family: 'Inter', sans-serif;
+    backdrop-filter: blur(8px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.80);
 }
 .trend-bear {
     display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(255, 107, 138, 0.12);
-    border: 1px solid rgba(255, 107, 138, 0.35);
+    background: rgba(255, 230, 230, 0.70);
+    border: 1px solid rgba(184, 50, 72, 0.35);
     border-radius: 8px;
     padding: 0.35rem 0.9rem;
     font-size: 0.85rem;
     font-weight: 600;
-    color: #FF6B8A;
+    color: #B83248;
     font-family: 'Inter', sans-serif;
+    backdrop-filter: blur(8px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.80);
 }
 
 /* ── Sidebar logo ── */
@@ -392,7 +431,7 @@ hr {
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 700;
     font-size: 1.25rem;
-    background: linear-gradient(90deg, #FFD166, #91C8F6);
+    background: linear-gradient(90deg, #8B5E0A, #C8922A);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -403,7 +442,7 @@ hr {
     font-size: 0.7rem;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: rgba(200,215,255,0.5) !important;
+    color: rgba(80, 60, 20, 0.50) !important;
     margin-bottom: 1rem;
     font-family: 'Inter', sans-serif;
 }
@@ -418,20 +457,21 @@ hr {
     gap: 0.4rem !important;
 }
 
-/* ── Selectbox / sidebar info ── */
+/* ── Sidebar info box ── */
 [data-testid="stInfo"] {
-    background: rgba(58, 134, 255, 0.10) !important;
-    border: 1px solid rgba(58, 134, 255, 0.25) !important;
+    background: rgba(255, 248, 220, 0.60) !important;
+    border: 1px solid rgba(200, 146, 42, 0.30) !important;
     border-radius: 10px !important;
-    color: var(--blue-sky) !important;
+    color: var(--gold-mid) !important;
     font-family: 'Inter', sans-serif !important;
     font-size: 0.8rem !important;
+    backdrop-filter: blur(10px) !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # ── Page title (rendered by Streamlit so CSS h1 applies) ──
-st.title("✦ AI Gold Price Intelligence")
+st.title("✦ AuraGold — AI Price Intelligence")
 
 # State Management
 if 'current_view' not in st.session_state:
@@ -534,7 +574,7 @@ if st.session_state.current_view == 'home':
             Real-time market data · Multi-currency support · 60-day projection.
         </p>
         <br>
-        <p style="font-size:0.85rem; color:rgba(200,215,255,0.5);">
+        <p style="font-size:0.85rem; color:rgba(80,60,20,0.45);">
             ← Select a forecasting tool from the sidebar to begin
         </p>
     </div>
@@ -548,13 +588,13 @@ elif st.session_state.current_view == 'warning':
     st.markdown('<div class="section-label">⚠️ Risk Disclosure</div>', unsafe_allow_html=True)
     st.markdown("""
     <div class="disclaimer-card">
-        <h3 style="color:#FF6B8A; font-family:'Space Grotesk',sans-serif; margin-top:0;">Financial Disclaimer</h3>
-        <p style="color:rgba(200,215,255,0.8); font-family:'Inter',sans-serif; line-height:1.7; font-size:0.95rem;">
-            This model is built for <strong style="color:#FFD166;">Technical Analysis only</strong>. Long-term recursive forecasting carries 
+        <h3 style="color:#B83248; font-family:'Space Grotesk',sans-serif; margin-top:0;">Financial Disclaimer</h3>
+        <p style="color:rgba(60,40,10,0.85); font-family:'Inter',sans-serif; line-height:1.7; font-size:0.95rem;">
+            This model is built for <strong style="color:#8B5E0A;">Technical Analysis only</strong>. Long-term recursive forecasting carries 
             inherent mathematical drift risks. Real-world prices may diverge significantly due to geopolitical events, 
             central bank policy, and macroeconomic shifts.
         </p>
-        <p style="color:rgba(200,215,255,0.65); font-family:'Inter',sans-serif; line-height:1.7; font-size:0.88rem; margin-bottom:0;">
+        <p style="color:rgba(60,40,10,0.60); font-family:'Inter',sans-serif; line-height:1.7; font-size:0.88rem; margin-bottom:0;">
             Always conduct independent Fundamental Analysis before acting on any AI projection.
         </p>
     </div>
@@ -665,10 +705,10 @@ elif st.session_state.current_view == 'daily':
     st.markdown(f"""
     <div class="status-bar">
         <span class="status-dot"></span>
-        <span style="color:rgba(200,215,255,0.85);">Live</span>
-        <span style="margin-left:0.5rem;">🕒 {current_time}</span>
-        <span style="margin-left:auto;">⚡ {(end_time - start_time):.2f}s latency</span>
-        <span style="margin-left:1rem;">💱 1 USD = {inr_rate:.2f} INR</span>
+        <span style="color:rgba(60,40,10,0.85); font-weight:600;">Live</span>
+        <span style="margin-left:0.5rem; color:rgba(80,60,20,0.70);">🕒 {current_time}</span>
+        <span style="margin-left:auto; color:rgba(80,60,20,0.65);">⚡ {(end_time - start_time):.2f}s latency</span>
+        <span style="margin-left:1rem; color:rgba(80,60,20,0.65);">💱 1 USD = {inr_rate:.2f} INR</span>
     </div>
     """, unsafe_allow_html=True)
 
@@ -706,17 +746,17 @@ elif st.session_state.current_view == 'daily':
     st.markdown("---")
     st.markdown('<div class="section-label">🔴 Live Market Feed</div>', unsafe_allow_html=True)
     tradingview_html = """
-    <div class="tradingview-widget-container" style="border-radius:16px; overflow:hidden;">
+    <div class="tradingview-widget-container" style="border-radius:16px; overflow:hidden; box-shadow: 0 6px 28px rgba(180,140,40,0.15);">
       <div id="tradingview_gold"></div>
       <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
       <script type="text/javascript">
       new TradingView.widget({
         "width": "100%", "height": 500,
         "symbol": "OANDA:XAUUSD", "interval": "D",
-        "timezone": "Etc/UTC", "theme": "dark", "style": "1",
+        "timezone": "Etc/UTC", "theme": "light", "style": "1",
         "locale": "en", "enable_publishing": false,
-        "backgroundColor": "rgba(6, 13, 31, 1)",
-        "gridColor": "rgba(255, 209, 102, 0.04)",
+        "backgroundColor": "rgba(255, 252, 240, 1)",
+        "gridColor": "rgba(200, 146, 42, 0.06)",
         "hide_top_toolbar": false, "hide_legend": false,
         "save_image": false, "container_id": "tradingview_gold"
       });
@@ -765,16 +805,16 @@ elif st.session_state.current_view == 'daily':
     fig_candle.update_layout(
         xaxis_rangeslider_visible=False,
         yaxis_title=f'Price ({curr_sym}/{unit_sym})',
-        paper_bgcolor='rgba(6,13,31,0.0)',
-        plot_bgcolor='rgba(6,13,31,0.6)',
-        font=dict(family='Inter', color='rgba(200,215,255,0.8)', size=12),
-        xaxis=dict(gridcolor='rgba(255,255,255,0.04)', linecolor='rgba(255,255,255,0.08)'),
-        yaxis=dict(gridcolor='rgba(255,255,255,0.04)', linecolor='rgba(255,255,255,0.08)'),
+        paper_bgcolor='rgba(255,252,240,0.0)',
+        plot_bgcolor='rgba(255,255,255,0.45)',
+        font=dict(family='Inter', color='rgba(60,40,10,0.75)', size=12),
+        xaxis=dict(gridcolor='rgba(200,146,42,0.10)', linecolor='rgba(200,146,42,0.15)', zerolinecolor='rgba(200,146,42,0.15)'),
+        yaxis=dict(gridcolor='rgba(200,146,42,0.10)', linecolor='rgba(200,146,42,0.15)', zerolinecolor='rgba(200,146,42,0.15)'),
         legend=dict(
-            bgcolor='rgba(10,22,50,0.7)',
-            bordercolor='rgba(255,209,102,0.2)',
+            bgcolor='rgba(255,252,240,0.70)',
+            bordercolor='rgba(200,146,42,0.25)',
             borderwidth=1,
-            font=dict(color='rgba(200,215,255,0.8)')
+            font=dict(color='rgba(60,40,10,0.80)')
         ),
         margin=dict(l=0, r=0, t=20, b=0),
         height=500
